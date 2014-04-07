@@ -1,5 +1,13 @@
 package edu.sjsu.cmpe.procurement;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import javax.jms.Connection;
+import javax.jms.Destination;
+
+import org.fusesource.stomp.jms.StompJmsConnectionFactory;
+import org.fusesource.stomp.jms.StompJmsDestination;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -12,11 +20,14 @@ import com.yammer.dropwizard.config.Environment;
 import de.spinscale.dropwizard.jobs.JobsBundle;
 import edu.sjsu.cmpe.procurement.api.resources.RootResource;
 import edu.sjsu.cmpe.procurement.config.ProcurementServiceConfiguration;
+import edu.sjsu.cmpe.procurement.jobs.ProcurementSchedulerJob;
+import edu.sjsu.cmpe.procurement.jobs.ProcurementToPublisherJob;
 
 public class ProcurementService extends Service<ProcurementServiceConfiguration> {
 
     private final Logger log = LoggerFactory.getLogger(getClass());
-
+    public static List<Integer> isbns;
+    
     /**
      * FIXME: THIS IS A HACK!
      */
@@ -53,10 +64,17 @@ public class ProcurementService extends Service<ProcurementServiceConfiguration>
 	 */
 	environment.addResource(RootResource.class);
 
+	isbns = new ArrayList<Integer>();
+	
 	String queueName = configuration.getStompQueueName();
 	String topicName = configuration.getStompTopicPrefix();
 	log.debug("Queue name is {}. Topic is {}", queueName, topicName);
+	
 	// TODO: Apollo STOMP Broker URL and login
-
+	
+	ProcurementToPublisherJob.configuration = configuration;
+	ProcurementSchedulerJob.configuration = configuration;
+	
+	
     }
 }
