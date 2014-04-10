@@ -21,13 +21,13 @@ import edu.sjsu.cmpe.library.config.LibraryServiceConfiguration;
 import edu.sjsu.cmpe.library.domain.Book;
 import edu.sjsu.cmpe.library.repository.BookRepositoryInterface;
 
-@Every("350s")
-public class Listener extends Job {
+
+public class Listener {
 	public static LibraryServiceConfiguration configuration;
 	public static BookRepositoryInterface bookRepository;
 
-	@Override
-	public void doJob() {
+	
+	public void listenForMessages() {
 		StompJmsConnectionFactory factory = new StompJmsConnectionFactory();
 		factory.setBrokerURI("tcp://" + configuration.getApolloHost() + ":"
 				+ configuration.getApolloPort());
