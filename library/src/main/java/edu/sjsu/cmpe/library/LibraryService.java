@@ -52,15 +52,11 @@ public class LibraryService extends Service<LibraryServiceConfiguration> {
 	// TODO: Apollo STOMP Broker URL and login
 	StompJmsConnectionFactory factory = new StompJmsConnectionFactory();
 	factory.setBrokerURI("tcp://" + configuration.getApolloHost() + ":" + configuration.getApolloPort());
-
-	Connection connection = factory.createConnection(configuration.getApolloUser(), configuration.getApolloPassword());
-	
-	Destination dest = new StompJmsDestination(configuration.getStompQueueName());
 	/** Root API */
 	environment.addResource(RootResource.class);
 	/** Books APIs */
 	BookRepositoryInterface bookRepository = new BookRepository();
-	environment.addResource(new BookResource(bookRepository,connection,dest,configuration.getLibraryName()));
+	environment.addResource(new BookResource(bookRepository,configuration));
 
 	/** UI Resources */
 	environment.addResource(new HomeResource(bookRepository));

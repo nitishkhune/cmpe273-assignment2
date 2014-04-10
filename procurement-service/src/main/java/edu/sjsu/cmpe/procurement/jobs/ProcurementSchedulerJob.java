@@ -58,6 +58,9 @@ public class ProcurementSchedulerJob extends Job {
 							+ msg.getClass());
 				}
 			} // end while loop
+			consumer.close();
+			session.close();
+			connection.stop();
 			connection.close();
 			System.out.println("Done");
 		} catch (Exception e) {

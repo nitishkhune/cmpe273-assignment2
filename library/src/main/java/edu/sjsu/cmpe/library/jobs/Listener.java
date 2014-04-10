@@ -25,21 +25,24 @@ import edu.sjsu.cmpe.library.repository.BookRepositoryInterface;
 public class Listener extends Job {
 	public static LibraryServiceConfiguration configuration;
 	public static BookRepositoryInterface bookRepository;
-	
+
 	@Override
 	public void doJob() {
 		StompJmsConnectionFactory factory = new StompJmsConnectionFactory();
 		factory.setBrokerURI("tcp://" + configuration.getApolloHost() + ":"
 				+ configuration.getApolloPort());
 		Connection connection = null;
+		Session session = null;
+		MessageConsumer consumer = null;
 		try {
 			connection = factory.createConnection(
 					configuration.getApolloUser(),
 					configuration.getApolloPassword());
 			connection.start();
-			Destination dest = new StompJmsDestination(configuration.getStompTopicName());
-			Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-			MessageConsumer consumer = session.createConsumer(dest);
+			Destination dest = new StompJmsDestination(
+					configuration.getStompTopicName());
+			session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+			consumer = session.createConsumer(dest);
 			long waitUntil = 5000;
 			String receivedMsg = null;
 			while (true) {
@@ -47,14 +50,14 @@ public class Listener extends Job {
 				if (msg != null) {
 					if (msg instanceof TextMessage) {
 						receivedMsg = ((TextMessage) msg).getText();
-						System.out.println("StompJmsMessage===>" + receivedMsg);
+						System.out.println("StompJmsMessage :" + receivedMsg);
 						if ("SHUTDOWN".equals(receivedMsg)) {
 							break;
 						}
 					} else if (msg instanceof StompJmsMessage) {
 						StompJmsMessage smsg = ((StompJmsMessage) msg);
 						receivedMsg = smsg.getFrame().contentAsString();
-						System.out.println("StompJmsMessage===>" + smsg);
+						System.out.println("StompJmsMessage :" + smsg);
 						if ("SHUTDOWN".equals(receivedMsg)) {
 							break;
 						}
@@ -87,10 +90,16 @@ public class Listener extends Job {
 		} catch (JMSException e) {
 			e.printStackTrace();
 		}
-		try {
-			connection.close();
-		} catch (JMSException e) {
-			e.printStackTrace();
+		finally{
+			try {
+				session.close();
+				consumer.close();
+				connection.stop();
+				connection.close();
+			} catch (JMSException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		}
 	}
 

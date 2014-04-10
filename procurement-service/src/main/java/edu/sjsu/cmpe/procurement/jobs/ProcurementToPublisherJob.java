@@ -78,7 +78,7 @@ public class ProcurementToPublisherJob extends Job {
 		String jsonString = ProcurementService.jerseyClient
 				.resource("http://"+configuration.getApolloHost()+":9000/orders/"+FIVE_DIGIT_SJSU_ID)
 				.type("application/json").get(String.class);
-		System.out.println("Jsson==>" + jsonString);
+		System.out.println("Json : " + jsonString);
 
 		try {
 			JSONObject tempJObj = new JSONObject(jsonString);
@@ -86,12 +86,12 @@ public class ProcurementToPublisherJob extends Job {
 			for (int i = 0; i < jArray.length(); i++) { // **line 2**
 				JSONObject childJSONObject = jArray.getJSONObject(i);
 				String categoryName = childJSONObject.getString("category");
-				System.out.println("Category is-->" + categoryName);
+				
 				String tempJSON = childJSONObject.getString("isbn") + ":\""
 						+ childJSONObject.getString("title") + "\":" + "\""
 						+ childJSONObject.getString("category") + "\":" + "\""
 						+ childJSONObject.getString("coverimage") + "\"";
-				System.out.println("Newly created JSON as per fomat is---->\n"+ tempJSON);
+				
 				if (tempJSON != null) {
 					String topicName = configuration.getStompTopicPrefix();
 					Destination dest = null;
@@ -113,19 +113,21 @@ public class ProcurementToPublisherJob extends Job {
 	}
 
 	public void pushBooksToTopics(String tempJSON, String categoryName, Destination dest) {
-		System.out.println("Inside pushBooksToTopics");
+	
 		StompJmsConnectionFactory factory = new StompJmsConnectionFactory();
 		factory.setBrokerURI("tcp://" + configuration.getApolloHost() + ":"
 				+ configuration.getApolloPort());
-		Connection connection;
+		Connection connection = null;
+		Session session = null;
+		MessageProducer producer = null;
 		try {
 			connection = factory.createConnection(configuration.getApolloUser(),
 					configuration.getApolloPassword());
 			connection.start();
 			
 			
-			Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-			MessageProducer producer = session.createProducer(dest);
+			session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+			producer = session.createProducer(dest);
 			producer.setDeliveryMode(DeliveryMode.NON_PERSISTENT);
 
 			TextMessage msg = session.createTextMessage(tempJSON);
@@ -134,6 +136,18 @@ public class ProcurementToPublisherJob extends Job {
 			System.out.println("Msg sent to topics");
 		} catch (JMSException e) {
 			e.printStackTrace();
+		}
+		finally{
+			try {
+				session.close();
+				producer.close();
+				connection.stop();
+				connection.close();
+			} catch (JMSException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			
 		}
 		
 	}
